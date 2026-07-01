@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health";
-import quranRouter from "./quran";
-import backgroundsRouter from "./backgrounds";
-import generateRouter from "./generate";
-import youtubeRouter from "./youtube";
+import healthRouter from "./health.js";
+import quranRouter from "./quran.js";
+import backgroundsRouter from "./backgrounds.js";
+import generateRouter from "./generate.js";
+import youtubeRouter from "./youtube.js";
 
 const router: IRouter = Router();
 

@@ -2,8 +2,8 @@ import { Router, type IRouter } from "express";
 import fs from "fs";
 import path from "path";
 import https from "https";
-import { UploadToYoutubeBody, UploadToYoutubeResponse } from "../lib/api-zod";
-import { jobs, outputDir } from "./generate";
+import { UploadToYoutubeBody, UploadToYoutubeResponse } from "../lib/api-zod/index.js";
+import { jobs, outputDir } from "./generate.js";
 
 const router: IRouter = Router();
 

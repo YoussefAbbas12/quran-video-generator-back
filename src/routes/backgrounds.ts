@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { SearchBackgroundsQueryParams, SearchBackgroundsResponse } from "../lib/api-zod";
+import { SearchBackgroundsQueryParams, SearchBackgroundsResponse } from "../lib/api-zod/index.js";
 
 const router: IRouter = Router();
 

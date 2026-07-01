@@ -22,8 +22,8 @@ import {
   GetGenerationStatusResponse,
   GetDownloadUrlQueryParams,
   GetDownloadUrlResponse,
-} from "../lib/api-zod";
-import { logger } from "../lib/logger";
+} from "../lib/api-zod/index.js";
+import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 

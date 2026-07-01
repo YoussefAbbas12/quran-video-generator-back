@@ -6,7 +6,7 @@ import {
   GetRecitersResponse,
   GetAyahAudioUrlQueryParams,
   GetAyahAudioUrlResponse,
-} from "../lib/api-zod";
+} from "../lib/api-zod/index.js";
 
 const router: IRouter = Router();
 
