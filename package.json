@@ -9,6 +9,7 @@
     "dev": "node ./build.mjs && node --enable-source-maps ./dist/index.mjs"
   },
   "dependencies": {
+    "axios": "^1.18.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
