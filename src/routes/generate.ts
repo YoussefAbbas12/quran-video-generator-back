@@ -1,20 +1,11 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { spawn, execSync } from "child_process";
+import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
-// Resolve python full path at startup
-let python3Bin = "python3";
-try {
-  python3Bin = execSync("which python3", { encoding: "utf8" }).trim();
-} catch {
-  try {
-    python3Bin = execSync("which python", { encoding: "utf8" }).trim();
-  } catch {
-    // fallback — will fail at spawn time with a clear error
-  }
-}
+const python3Bin = process.env.PYTHON_BIN ?? process.env.PYTHON ?? "python3";
 import {
   StartGenerationBody,
   StartGenerationResponse,
@@ -28,8 +19,7 @@ import { logger } from "../lib/logger.js";
 const router: IRouter = Router();
 
 const backendRoot = process.cwd();
-
-const outputDir = path.resolve(backendRoot, "generated");
+const outputDir = path.resolve(process.env.VERCEL_BUILD_OUTPUT || os.tmpdir(), "quran-video-generated");
 const pythonScript = path.resolve(backendRoot, "python/generate_video.py");
 
 if (!fs.existsSync(outputDir)) {
