@@ -1,0 +1,4 @@
+# System requirements (install via apt or brew):
+# - FFmpeg:       apt install ffmpeg
+# - ImageMagick:  apt install imagemagick
+# Python 3.9+ required. No pip packages needed.
