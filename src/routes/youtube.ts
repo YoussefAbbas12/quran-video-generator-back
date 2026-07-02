@@ -138,6 +138,10 @@ router.post("/youtube/upload", async (req, res): Promise<void> => {
       uploadData = (await uploadResponse.json()) as { id: string; status: { uploadStatus: string } };
     }
 
+    if (!uploadData) {
+      throw new Error("YouTube upload returned empty response");
+    }
+
     const videoId = uploadData.id;
     // Use /shorts/ URL so YouTube treats it as a Short (requires #Shorts in title/desc too)
     const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
