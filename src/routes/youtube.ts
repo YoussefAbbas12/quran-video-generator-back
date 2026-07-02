@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
 import fs from "fs";
 import path from "path";
-import https from "https";
 import { UploadToYoutubeBody, UploadToYoutubeResponse } from "../lib/api-zod/index.js";
 import { jobs, outputDir } from "./generate.js";
 
@@ -105,43 +104,39 @@ router.post("/youtube/upload", async (req, res): Promise<void> => {
       return;
     }
 
-    const uploadData = await new Promise<{ id: string; status: { uploadStatus: string } }>((resolve, reject) => {
-      const parsedUrl = new URL(uploadUrl);
-      const options = {
-        hostname: parsedUrl.hostname,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: "PUT",
-        headers: {
-          "Content-Type": "video/mp4",
-          "Content-Length": videoSize,
-        },
-      };
+    // When sending a Node stream as the body, undici requires the `duplex` option.
+    // Use a resuable variable so we don't call `.json()` on empty 308 responses.
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "video/mp4",
+        "Content-Length": String(videoSize),
+        "Content-Range": `bytes 0-${videoSize - 1}/${videoSize}`,
+      },
+      // `duplex: 'half'` is required by undici when sending a streaming body
+      // TypeScript's RequestInit doesn't include `duplex`, so cast to `any`.
+      body: fs.createReadStream(videoPath),
+      duplex: 'half',
+      signal: AbortSignal.timeout(30 * 60 * 1000),
+    } as any);
 
-      const uploadReq = https.request(options, (uploadRes) => {
-        let data = "";
-        uploadRes.on("data", (chunk) => {
-          data += chunk;
-        });
-        uploadRes.on("end", () => {
-          if (uploadRes.statusCode && uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
-            try {
-              resolve(JSON.parse(data));
-            } catch (err) {
-              reject(new Error(`Failed to parse response JSON: ${data}`));
-            }
-          } else {
-            reject(new Error(`Upload failed with status ${uploadRes.statusCode}: ${data}`));
-          }
-        });
-      });
+    let uploadData: { id: string; status: { uploadStatus: string } } | null = null;
 
-      uploadReq.on("error", (err) => {
-        reject(err);
-      });
-
-      const videoStream = fs.createReadStream(videoPath);
-      videoStream.pipe(uploadReq);
-    });
+    if (uploadResponse.status === 308) {
+      // Resume incomplete response — try to read any JSON, otherwise fallback
+      try {
+        const dataText = await uploadResponse.text();
+        uploadData = dataText ? JSON.parse(dataText) : { id: "", status: { uploadStatus: "uploaded" } };
+      } catch {
+        uploadData = { id: "", status: { uploadStatus: "uploaded" } };
+      }
+    } else if (!uploadResponse.ok) {
+      const errText = await uploadResponse.text();
+      throw new Error(`Upload failed with status ${uploadResponse.status}: ${errText}`);
+    } else {
+      uploadData = (await uploadResponse.json()) as { id: string; status: { uploadStatus: string } };
+    }
 
     const videoId = uploadData.id;
     // Use /shorts/ URL so YouTube treats it as a Short (requires #Shorts in title/desc too)

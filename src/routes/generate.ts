@@ -1,11 +1,36 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import path from "path";
 import fs from "fs";
 import os from "os";
 
-const python3Bin = process.env.PYTHON_BIN ?? process.env.PYTHON ?? "python3";
+function resolvePythonBinary() {
+  const candidates = [
+    { cmd: process.env.PYTHON_BIN, args: [] },
+    { cmd: process.env.PYTHON, args: [] },
+    { cmd: "python", args: [] },
+    ...(process.platform === "win32" ? [{ cmd: "py", args: ["-3"] }] : []),
+    { cmd: "python3", args: [] },
+  ].filter((item): item is { cmd: string; args: string[] } => Boolean(item.cmd));
+
+  for (const candidate of candidates) {
+    try {
+      const result = spawnSync(candidate.cmd, [...candidate.args, "--version"], {
+        stdio: "ignore",
+      });
+      if (result.status === 0) {
+        return candidate;
+      }
+    } catch {
+      // ignore invalid or missing candidate
+    }
+  }
+
+  return candidates[0] ?? { cmd: "python3", args: [] };
+}
+
+const { cmd: python3Bin, args: pythonBinArgs } = resolvePythonBinary();
 import {
   StartGenerationBody,
   StartGenerationResponse,
@@ -73,9 +98,9 @@ router.post("/generate", async (req, res): Promise<void> => {
     "--reciter-api", reciterApiUrl,
   ];
 
-  logger.info({ jobId, args }, "Spawning Python video generation");
+  logger.info({ jobId, python3Bin, pythonBinArgs, args }, "Spawning Python video generation");
 
-  const pythonProcess = spawn(python3Bin, args, {
+  const pythonProcess = spawn(python3Bin, [...pythonBinArgs, ...args], {
     env: {
       ...process.env,
     },
